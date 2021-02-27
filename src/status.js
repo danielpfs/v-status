@@ -1,86 +1,91 @@
 import Vue from 'vue'
 
-export default {
+export default (mixinName = '$status') => ({
   computed: {
-    status: {
+    [mixinName]: {
       get () {
-        if (!this._statusMixin)
-          this._statusMixin = new Proxy(Vue.observable({}), {
+        /**
+         * _vStatusMixin store all objects called by component to control status of promises and
+         * it is a Proxy to automate generation of attributes
+         */
+        if (!this._vStatusMixin)
+          // create a Proxy of Observable Vue object if not exists
+          this._vStatusMixin = new Proxy(Vue.observable({}), {
+            // get generate status objects
             get: (obj, attr) => {
-              if (obj[attr] == undefined)
-                this.$set(obj, attr, {
-                  isLoading: false,
-                  isError: false,
-                  isSuccess: false,
-                  error: {
-                    message: undefined
-                  },
-                  errors: []
-                })
+              if (obj[attr] == undefined) {
+                // function to reset to initial state of status
+                const clear = () => {
+                  console.log(obj[attr])
+                  this.$set(obj, attr, {
+                    isLoading: false,
+                    isError: false,
+                    isSuccess: false,
+                    error: {
+                      message: undefined
+                    },
+                    errors: [],
+                    clear
+                  })
+                }
+                obj[attr] = this.$set(obj, attr, { clear }) // create object
+                obj[attr].clear() // make sure that object starts with initial state
+                console.log(obj)
+              }
 
-              return obj[attr]
+              return obj[attr] // return object created
             },
-            set: (obj, attr, value) => {
-              this.setStatus(attr, value)
+            // when receive a promise, promises list or a function with a promise as return, manage status of promise
+            set: (obj, attr, promise) => {
+              const current = this[mixinName]
+
+              if (Array.isArray(promise))
+                promise = Promise.all([...promise.map(p => p.catch(err => {
+                  current[attr].errors.push({ message: Object.is(err) ? err.message : err })
+                }))])
+
+              if (typeof promise == 'function') // if value is a function, call before
+                promise = promise()
+
+              if (!promise.then) // check if is a valid promise, raise an error if not
+                throw 'need to be a promise'
+
+              // clear and change state to loading
+              current[attr].clear()
+              current[attr].isLoading = true
+
+              promise
+                .then(res => {
+                  if (!current[attr].errors.length) {
+                    // if promise be resolved, change state to success
+                    current[attr].isLoading = false
+                    current[attr].isSuccess = true
+                  } else {
+                    // if promise not be resolved, change state to error
+                    current[attr].isLoading = false
+                    current[attr].isError = true
+                    current[attr].isSuccess = false
+                    current[attr].error.message = `${current[attr].errors.length} error(s)`
+                  }
+
+                  return res
+                })
+                .catch(err => {
+                  // if promise not be resolved, change state to error
+                  current[attr].isLoading = false
+                  current[attr].isError = true
+                  current[attr].isSuccess = false
+                  current[attr].error.message = Object.is(err) ? err.message : err
+
+                  return err
+                })
 
               return obj
             }
           })
 
-        return this._statusMixin
-      },
-    }
-  },
-  methods: {
-    statusClear (attr) {
-      this.status[attr].isLoading = false
-      this.status[attr].isError = false
-      this.status[attr].isSuccess = false
-      this.status[attr].error.message = undefined
-      this.status[attr].errors = []
-    },
-    setStatus (attr, promise) {
-      if (Array.isArray(promise))
-        promise = Promise.all([...promise.map(p => p.catch(err => {
-          this.status[attr].errors.push({ message: Object.is(err) ? err.message : err })
-        }))])
-
-      if (typeof promise == 'function') // caso seja uma função, executa antes
-        promise = promise()
-
-      if (!promise.then) // verifica se é uma promise, dispara erro caso não
-        throw 'need to be a promise'
-
-      this.statusClear(attr)
-
-      // deixa o estado como loading
-      this.status[attr].isLoading = true
-
-      promise
-        .then(res => {
-          if (!this.status[attr].errors.length) {
-            // caso seja sucesso, altera o estado para concluído
-            this.status[attr].isLoading = false
-            this.status[attr].isSuccess = true
-          } else {
-            // caso não seja sucesso, altera o estado para erro
-            this.status[attr].isLoading = false
-            this.status[attr].isError = true
-            this.status[attr].isSuccess = false
-            this.status[attr].error.message = `${this.status[attr].errors.length} erro(s)`
-          }
-
-          return res
-        })
-        .catch(err => {
-          // caso não seja sucesso, altera o estado para erro
-          this.status[attr].isLoading = false
-          this.status[attr].isError = true
-          this.status[attr].isSuccess = false
-          this.status[attr].error.message = Object.is(err) ? err.message : err
-
-          return err
-        })
+        return this._vStatusMixin
+      }
     }
   }
-}
+})
