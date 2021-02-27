@@ -3,19 +3,25 @@
     <h1>Test Status</h1>
     <div v-if="status.feature.isLoading">Loading</div>
     <div
-      v-if="status.feature.isSuccess"
+      v-else-if="status.feature.isSuccess"
       class="success"
     >Carregou com sucesso os dados</div>
     <div
-      v-if="status.feature.isError"
+      v-else-if="status.feature.isError"
       class="error"
-    >Ocorreu um erro no carregamento</div>
+    >
+      Ocorreu um erro no carregamento.
+      <div>Message: {{ status.feature.error.message}}</div>
+    </div>
+    <div v-else>Click under to make tests</div>
     <div class="space" />
     <button
+      class="success"
       :disabled="status.feature.isLoading"
       @click="success"
     >Make a success Promise</button>
     <button
+      class="error"
       :disabled="status.feature.isLoading"
       @click="error"
     >Make a error Promise</button>
@@ -46,7 +52,7 @@ function _fakePromise (duraction, returnError = false) {
   })
   setTimeout(() => {
     console.log('promise running')
-    return returnError ? error() : resolve()
+    return returnError ? error('Request failed') : resolve()
   }, duraction || 2000)
 
   return promise
@@ -64,5 +70,11 @@ function _fakePromise (duraction, returnError = false) {
 }
 .space {
   margin: 20px;
+}
+.error {
+  color: red;
+}
+.success {
+  color: green;
 }
 </style>
