@@ -921,12 +921,16 @@ module.exports = function (O, defaultConstructor) {
 /***/ "4930":
 /***/ (function(module, exports, __webpack_require__) {
 
+var IS_NODE = __webpack_require__("605d");
+var V8_VERSION = __webpack_require__("2d00");
 var fails = __webpack_require__("d039");
 
 module.exports = !!Object.getOwnPropertySymbols && !fails(function () {
-  // Chrome 38 Symbol has incorrect toString conversion
   /* global Symbol -- required for testing */
-  return !String(Symbol());
+  return !Symbol.sham &&
+    // Chrome 38 Symbol has incorrect toString conversion
+    // Chrome 38-40 symbols are not inherited from DOM collections prototypes to instances
+    (IS_NODE ? V8_VERSION === 38 : V8_VERSION > 37 && V8_VERSION < 41);
 });
 
 
@@ -1057,7 +1061,7 @@ var store = __webpack_require__("c6cd");
 (module.exports = function (key, value) {
   return store[key] || (store[key] = value !== undefined ? value : {});
 })('versions', []).push({
-  version: '3.9.0',
+  version: '3.9.1',
   mode: IS_PURE ? 'pure' : 'global',
   copyright: '© 2021 Denis Pushkarev (zloirock.ru)'
 });
@@ -2400,9 +2404,12 @@ var Symbol = global.Symbol;
 var createWellKnownSymbol = USE_SYMBOL_AS_UID ? Symbol : Symbol && Symbol.withoutSetter || uid;
 
 module.exports = function (name) {
-  if (!has(WellKnownSymbolsStore, name)) {
-    if (NATIVE_SYMBOL && has(Symbol, name)) WellKnownSymbolsStore[name] = Symbol[name];
-    else WellKnownSymbolsStore[name] = createWellKnownSymbol('Symbol.' + name);
+  if (!has(WellKnownSymbolsStore, name) || !(NATIVE_SYMBOL || typeof WellKnownSymbolsStore[name] == 'string')) {
+    if (NATIVE_SYMBOL && has(Symbol, name)) {
+      WellKnownSymbolsStore[name] = Symbol[name];
+    } else {
+      WellKnownSymbolsStore[name] = createWellKnownSymbol('Symbol.' + name);
+    }
   } return WellKnownSymbolsStore[name];
 };
 
@@ -3600,6 +3607,9 @@ module.exports = function (key) {
 // ESM COMPAT FLAG
 __webpack_require__.r(__webpack_exports__);
 
+// EXPORTS
+__webpack_require__.d(__webpack_exports__, "VStatus", function() { return /* reexport */ src_status; });
+
 // CONCATENATED MODULE: ./node_modules/@vue/cli-service/lib/commands/build/setPublicPath.js
 // This file is imported into lib/wc client bundles.
 
@@ -3623,9 +3633,6 @@ if (typeof window !== 'undefined') {
 
 // Indicate to webpack that this file can be concatenated
 /* harmony default export */ var setPublicPath = (null);
-
-// EXTERNAL MODULE: ./node_modules/core-js/modules/es.function.name.js
-var es_function_name = __webpack_require__("b0c0");
 
 // CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/defineProperty/_index.mjs
 function _defineProperty(obj, key, value) {
@@ -3698,6 +3705,9 @@ function _iterableToArray(iter) {
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.slice.js
 var es_array_slice = __webpack_require__("fb6a");
 
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.function.name.js
+var es_function_name = __webpack_require__("b0c0");
+
 // CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/unsupportedIterableToArray/_index.mjs
 
 
@@ -3751,10 +3761,13 @@ var external_commonjs_vue_commonjs2_vue_root_Vue_default = /*#__PURE__*/__webpac
 
 
 
+
 /* harmony default export */ var src_status = (function () {
-  var mixinName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '$status';
+  var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
+    name: '$status'
+  };
   return {
-    computed: _defineProperty({}, mixinName, {
+    computed: _defineProperty({}, props.name, {
       get: function get() {
         var _this = this;
 
@@ -3769,8 +3782,6 @@ var external_commonjs_vue_commonjs2_vue_root_Vue_default = /*#__PURE__*/__webpac
               if (obj[attr] == undefined) {
                 // function to reset to initial state of status
                 var clear = function clear() {
-                  console.log(obj[attr]);
-
                   _this.$set(obj, attr, {
                     isLoading: false,
                     isError: false,
@@ -3788,15 +3799,13 @@ var external_commonjs_vue_commonjs2_vue_root_Vue_default = /*#__PURE__*/__webpac
                 }); // create object
 
                 obj[attr].clear(); // make sure that object starts with initial state
-
-                console.log(obj);
               }
 
               return obj[attr]; // return object created
             },
             // when receive a promise, promises list or a function with a promise as return, manage status of promise
             set: function set(obj, attr, promise) {
-              var current = _this[mixinName];
+              var current = _this[props.name];
               if (Array.isArray(promise)) promise = Promise.all(_toConsumableArray(promise.map(function (p) {
                 return p.catch(function (err) {
                   current[attr].errors.push({
@@ -3833,7 +3842,7 @@ var external_commonjs_vue_commonjs2_vue_root_Vue_default = /*#__PURE__*/__webpac
                 current[attr].error.message = Object.is(err) ? err.message : err;
                 return err;
               });
-              return obj;
+              return promise;
             }
           });
         return this._vStatusMixin;
@@ -3844,15 +3853,12 @@ var external_commonjs_vue_commonjs2_vue_root_Vue_default = /*#__PURE__*/__webpac
 // CONCATENATED MODULE: ./src/index.js
 
 
-
-function install(Vue) {
-  var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
-    name: 'status'
-  };
-  Vue.mixin(src_status(props.name));
+function install(Vue, props) {
+  Vue.mixin(src_status(props));
 }
 
 /* harmony default export */ var src_0 = (install);
+
 // CONCATENATED MODULE: ./node_modules/@vue/cli-service/lib/commands/build/entry-lib.js
 
 

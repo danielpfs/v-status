@@ -1,8 +1,8 @@
 import Vue from 'vue'
 
-export default (mixinName = '$status') => ({
+export default (props = { name: '$status' }) => ({
   computed: {
-    [mixinName]: {
+    [props.name]: {
       get () {
         /**
          * _vStatusMixin store all objects called by component to control status of promises and
@@ -16,7 +16,6 @@ export default (mixinName = '$status') => ({
               if (obj[attr] == undefined) {
                 // function to reset to initial state of status
                 const clear = () => {
-                  console.log(obj[attr])
                   this.$set(obj, attr, {
                     isLoading: false,
                     isError: false,
@@ -30,14 +29,13 @@ export default (mixinName = '$status') => ({
                 }
                 obj[attr] = this.$set(obj, attr, { clear }) // create object
                 obj[attr].clear() // make sure that object starts with initial state
-                console.log(obj)
               }
 
               return obj[attr] // return object created
             },
             // when receive a promise, promises list or a function with a promise as return, manage status of promise
             set: (obj, attr, promise) => {
-              const current = this[mixinName]
+              const current = this[props.name]
 
               if (Array.isArray(promise))
                 promise = Promise.all([...promise.map(p => p.catch(err => {
@@ -80,7 +78,7 @@ export default (mixinName = '$status') => ({
                   return err
                 })
 
-              return obj
+              return promise
             }
           })
 

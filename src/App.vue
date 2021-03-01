@@ -1,62 +1,29 @@
 <template>
   <div id="app">
     <h1>Test Status</h1>
-    <div v-if="status.feature.isLoading">Loading</div>
-    <div
-      v-else-if="status.feature.isSuccess"
-      class="success"
-    >Carregou com sucesso os dados</div>
-    <div
-      v-else-if="status.feature.isError"
-      class="error"
-    >
-      Ocorreu um erro no carregamento.
-      <div>Message: {{ status.feature.error.message}}</div>
-    </div>
-    <div v-else>Click under to make tests</div>
-    <div class="space" />
-    <button
-      class="success"
-      :disabled="status.feature.isLoading"
-      @click="success"
-    >Make a success Promise</button>
-    <button
-      class="error"
-      :disabled="status.feature.isLoading"
-      @click="error"
-    >Make a error Promise</button>
+    <local-usage />
+    <custom-name />
+    <many-status />
+    <many-promises-to-same-feature />
   </div>
 </template>
 
 <script>
+import CustomName from './examples/CustomName.vue'
+import LocalUsage from './examples/LocalUsage.vue'
+import ManyPromisesToSameFeature from './examples/ManyPromisesToSameFeature.vue'
+import ManyStatus from './examples/ManyStatus.vue'
 
 export default {
   name: 'App',
-  methods: {
-    success () {
-      this.status.feature = _fakePromise()
-    },
-    error () {
-      this.status.feature = _fakePromise(2000, true)
-    },
-
-  }
+  components: {
+    LocalUsage,
+    CustomName,
+    ManyStatus,
+    ManyPromisesToSameFeature
+  },
 }
 
-function _fakePromise (duraction, returnError = false) {
-  let resolve
-  let error
-  const promise = new Promise((res, e) => {
-    resolve = res
-    error = e
-  })
-  setTimeout(() => {
-    console.log('promise running')
-    return returnError ? error('Request failed') : resolve()
-  }, duraction || 2000)
-
-  return promise
-}
 </script>
 
 <style>
