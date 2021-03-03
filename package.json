@@ -1,9 +1,14 @@
 {
   "name": "v-status",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A lib to control status of promises in Vue components",
-  "author": "Daniel Soares <danielpfsoares@gmail.com>",
+  "author": "Daniel Soares <danielpfsoares@gmail.com> (https://danielsoares.dev)",
   "main": "dist/v-status.js",
+  "homepage": "https://github.com/danielpfs/v-status#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danielpfs/v-status.git"
+  },
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build --target lib --name v-status src/index.js && cp dist/v-status.umd.min.js dist/v-status.js",
